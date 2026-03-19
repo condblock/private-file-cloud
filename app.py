@@ -1,17 +1,23 @@
 import os
+import logging
+from datetime import datetime
 from flask import Flask, request, render_template, send_from_directory, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key" 
 
+logging.basicConfig(
+    filename='server.log', 
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s - %(message)s'
+)
+
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 * 1024  # 32GB 제한
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'zip', 'mp4', 'avi', 'mkv'}
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 * 1024
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 DOWNLOAD_PASSWORD = "password123!"
-
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def index():
@@ -20,28 +26,25 @@ def index():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        # 1. 암호 확인 먼저 수행
         password = request.form.get('password')
-        if password != DOWNLOAD_PASSWORD:
-            flash('업로드 비밀번호가 틀렸습니다.')
-            return redirect(request.url)
+        client_ip = request.remote_addr
 
-        # 2. 파일 존재 확인
+        if password != DOWNLOAD_PASSWORD:
+            logging.warning(f"업로드 실패: 비밀번호 불일치 (IP: {client_ip})")
+            return "Invalid Password", 403
+
         if 'file' not in request.files:
-            flash('파일이 선택되지 않았습니다.')
-            return redirect(request.url)
+            return "No file part", 400
         
         file = request.files['file']
-        
         if file.filename == '':
-            flash('선택된 파일이 없습니다.')
-            return redirect(request.url)
+            return "No selected file", 400
             
         if file:
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            flash(f"'{filename}' 파일이 성공적으로 업로드되었습니다.")
-            return redirect(url_for('index'))
+            logging.info(f"파일 업로드 성공: {filename} (IP: {client_ip})")
+            return "Success", 200
             
     return render_template('upload.html')
 
@@ -52,16 +55,20 @@ def download_list():
 
 @app.route('/download/<filename>', methods=['GET', 'POST'])
 def download_file(filename):
+    client_ip = request.remote_addr
     if request.method == 'POST':
         password = request.form.get('password')
         
         if password == DOWNLOAD_PASSWORD:
+            logging.info(f"파일 다운로드 시작: {filename} (IP: {client_ip})")
             return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
         else:
-            flash('비밀번호가 틀렸습니다. 다시 시도해 주세요.')
+            logging.warning(f"다운로드 거부: 비밀번호 불일치 - 파일: {filename} (IP: {client_ip})")
+            flash('비밀번호가 틀렸습니다.')
             return redirect(request.url)
             
     return render_template('download_auth.html', filename=filename)
 
 if __name__ == '__main__':
+    logging.info("--- 서버 시작 ---")
     app.run(port=5150, debug=True)
