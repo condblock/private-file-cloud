@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>야매클라우드</title>
+</head>
+<body>
+    <h1>야매클라우드: 32GB제한</h1>
+    
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul style="color: blue;">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <ul>
+        <li><a href="/upload">파일 업로드</a></li>
+        <li><a href="/download">파일 다운로드</a></li>
+    </ul>
+</body>
+</html>

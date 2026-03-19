@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>다운로드 암호 입력</title>
+</head>
+<body>
+    <h2>'{{ filename }}' 다운로드</h2>
+    <p>다운로드 암호 입력</p>
+    
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul style="color: red;">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="password">암호 입력:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">확인 및 다운로드</button>
+    </form>
+    <br>
+    <a href="/download">목록으로 돌아가기</a>
+</body>
+</html>

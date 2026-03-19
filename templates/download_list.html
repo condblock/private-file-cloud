@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>파일 목록</title>
+</head>
+<body>
+    <h2>다운로드할 파일 선택</h2>
+    
+    {% if files %}
+        <ul>
+        {% for file in files %}
+            <li>
+                {{ file }} - <a href="{{ url_for('download_file', filename=file) }}">다운로드</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>현재 업로드된 파일 없음</p>
+    {% endif %}
+    
+    <br>
+    <a href="/">메인 화면으로</a>
+</body>
+</html>

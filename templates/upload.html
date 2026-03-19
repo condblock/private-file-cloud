@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>파일 업로드</title>
+    <style>
+        #progress-container { width: 100%; background-color: #f3f3f3; border: 1px solid #ccc; display: none; margin-top: 20px; }
+        #progress-bar { width: 0%; height: 30px; background-color: #4CAF50; text-align: center; line-height: 30px; color: white; }
+        #status { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>파일 업로드</h2>
+    
+    <div id="message-area" style="color: red;"></div>
+
+    <form id="upload-form">
+        <div style="margin-bottom: 10px;">
+            <label for="password">암호 입력:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <input type="file" id="file-input" name="file" required>
+        </div>
+        
+        <button type="button" onclick="uploadFile()">업로드 시작</button>
+    </form>
+
+    <div id="progress-container">
+        <div id="progress-bar">0%</div>
+    </div>
+    <div id="status"></div>
+
+    <br>
+    <a href="/">메인으로 돌아가기</a>
+
+    <script>
+        function uploadFile() {
+            const form = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-input');
+            const password = document.getElementById('password').value;
+            const progressBar = document.getElementById('progress-bar');
+            const progressContainer = document.getElementById('progress-container');
+            const status = document.getElementById('status');
+            const messageArea = document.getElementById('message-area');
+
+            if (!fileInput.files[0] || !password) {
+                alert("암호와 파일을 모두 입력해주세요.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('password', password);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = percentComplete + '%';
+                    progressBar.innerHTML = percentComplete + '%';
+                    status.innerHTML = `전송 중: ${(e.loaded / (1024 * 1024)).toFixed(2)} MB / ${(e.total / (1024 * 1024)).toFixed(2)} MB`;
+                }
+            });
+
+            // 완료 시 이벤트
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        alert("업로드 완료");
+                        window.location.href = "{{ url_for('index') }}";
+                    } else if (xhr.status === 413) {
+                        status.innerHTML = "오류: 파일 용량이 너무 큽니다 (32GB 초과).";
+                    } else {
+                        alert("업로드 실패: 암호를 확인하거나 다시 시도해 주세요.");
+                        progressContainer.style.display = 'none';
+                    }
+                }
+            };
+
+            xhr.open('POST', '/upload', true);
+            xhr.send(formData);
+        }
+    </script>
+</body>
+</html>
